@@ -55,6 +55,7 @@ class SyncHandler(IPythonHandler):
             branch = self.get_argument('branch')
             repo_dir = repo.split('/')[-1]
 
+
             # We gonna send out event streams!
             self.set_header('content-type', 'text/event-stream')
             self.set_header('cache-control', 'no-cache')
@@ -134,6 +135,7 @@ class UIHandler(IPythonHandler):
 
         repo = self.get_argument('repo')
         branch = self.get_argument('branch', 'master')
+        autoRedirect = self.get_argument('autoRedirect', True)
         urlPath = self.get_argument('urlpath', None) or \
                   self.get_argument('urlPath', None)
         subPath = self.get_argument('subpath', None) or \
@@ -155,7 +157,8 @@ class UIHandler(IPythonHandler):
         self.write(
             self.render_template(
                 'status.html',
-                repo=repo, branch=branch, path=path, version=__version__
+                repo=repo, branch=branch, path=path,
+                autoRedirect=autoRedirect, version=__version__
             ))
         self.flush()
 
