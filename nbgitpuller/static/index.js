@@ -151,6 +151,8 @@ require([
         } else {
             gsv.setProgressText('Sync finished');
             gsv.setTerminalVisibility(true);
+            $('#follow-redirection>a').attr('href', gs.redirectUrl);
+            $('#follow-redirection').show();
         }
     });
     gs.addHandler('error', function(data) {
