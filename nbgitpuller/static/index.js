@@ -12,11 +12,12 @@ require([
 
     Terminal.applyAddon(fit);
 
-    function GitSync(baseUrl, repo, branch, path) {
+    function GitSync(baseUrl, repo, branch, toplevel, path) {
         // Class that talks to the API backend & emits events as appropriate
         this.baseUrl = baseUrl;
         this.repo = repo;
         this.branch = branch;
+        this.toplevel = toplevel;
         this.redirectUrl = baseUrl + path;
 
         this.callbacks = {};
@@ -42,7 +43,8 @@ require([
         // Start git pulling handled by SyncHandler, declared in handlers.py
         var syncUrl = this.baseUrl + 'git-pull/api?' + $.param({
             repo: this.repo,
-            branch: this.branch
+            branch: this.branch,
+            toplevel: this.toplevel,
         });
 
         this.eventSource = new EventSource(syncUrl);
@@ -126,7 +128,8 @@ require([
         utils.get_body_data('baseUrl'),
         utils.get_body_data('repo'),
         utils.get_body_data('branch'),
-        utils.get_body_data('path')
+        utils.get_body_data('toplevel'),
+        utils.get_body_data('path'),
     );
 
     let redirect_str = utils.get_body_data('autoRedirect');

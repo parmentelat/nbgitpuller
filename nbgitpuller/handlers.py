@@ -53,14 +53,14 @@ class SyncHandler(IPythonHandler):
         try:
             repo = self.get_argument('repo')
             branch = self.get_argument('branch')
-            repo_dir = repo.split('/')[-1]
+            toplevel = self.get_argument('toplevel')
 
 
             # We gonna send out event streams!
             self.set_header('content-type', 'text/event-stream')
             self.set_header('cache-control', 'no-cache')
 
-            gp = GitPuller(repo, branch, repo_dir)
+            gp = GitPuller(repo, branch, toplevel)
 
             q = Queue()
             def pull():
@@ -145,8 +145,10 @@ class UIHandler(IPythonHandler):
         if urlPath:
             path = urlPath
         else:
-            repo_dir = repo.split('/')[-1]
-            path = os.path.join(repo_dir, subPath)
+            toplevel = self.get_argument('toplevel', None)
+            if toplevel is None:
+                toplevel = repo.split('/')[-1]
+            path = os.path.join(toplevel, subPath)
             if app.lower() == 'lab':
                 path = 'lab/tree/' + path
             elif path.lower().endswith('.ipynb'):
@@ -158,7 +160,8 @@ class UIHandler(IPythonHandler):
             self.render_template(
                 'status.html',
                 repo=repo, branch=branch, path=path,
-                autoRedirect=autoRedirect, version=__version__
+                autoRedirect=autoRedirect, toplevel=toplevel,
+                version=__version__
             ))
         self.flush()
 
