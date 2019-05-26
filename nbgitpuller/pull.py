@@ -60,6 +60,14 @@ class GitPuller:
         else:
             yield from self.update()
 
+
+    def configure_git_user_if_needed(self):
+        command1 = 'git config user.name || git config user.name "nbgitpuller"'
+        command2 = 'git config user.email || git config --global user.email "nbgitpuller@example.com"'
+        yield from execute_cmd(['bash', '-c', command1], cwd=self.repo_dir)
+        yield from execute_cmd(['bash', '-c', command2], cwd=self.repo_dir)
+
+
     def initialize_repo(self):
         """
         Clones repository & sets up usernames.
@@ -68,8 +76,7 @@ class GitPuller:
         logging.info('Repo {} doesn\'t exist. Cloning...'.format(self.repo_dir))
         yield from execute_cmd(['git', 'clone', self.git_url, self.repo_dir])
         yield from execute_cmd(['git', 'checkout', self.branch_name], cwd=self.repo_dir)
-        yield from execute_cmd(['git', 'config', 'user.email', 'nbgitpuller@example.com'], cwd=self.repo_dir)
-        yield from execute_cmd(['git', 'config', 'user.name', 'nbgitpuller'], cwd=self.repo_dir)
+        yield from self.configure_git_user_if_needed()
         logging.info('Repo {} initialized'.format(self.repo_dir))
 
 
