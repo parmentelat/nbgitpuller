@@ -136,18 +136,21 @@ class UIHandler(IPythonHandler):
         repo = self.get_argument('repo')
         branch = self.get_argument('branch', 'master')
         autoRedirect = self.get_argument('autoRedirect', True)
+        redirectUrl = self.get_argument('redirectUrl', None)
         urlPath = self.get_argument('urlpath', None) or \
                   self.get_argument('urlPath', None)
         subPath = self.get_argument('subpath', None) or \
                   self.get_argument('subPath', '.')
         app = self.get_argument('app', app_env)
 
+        toplevel = self.get_argument('toplevel', None)
+        if toplevel is None:
+            toplevel = repo.split('/')[-1]
+
+        
         if urlPath:
             path = urlPath
         else:
-            toplevel = self.get_argument('toplevel', None)
-            if toplevel is None:
-                toplevel = repo.split('/')[-1]
             path = os.path.join(toplevel, subPath)
             if app.lower() == 'lab':
                 path = 'lab/tree/' + path
@@ -159,8 +162,8 @@ class UIHandler(IPythonHandler):
         self.write(
             self.render_template(
                 'status.html',
-                repo=repo, branch=branch, path=path,
-                autoRedirect=autoRedirect, toplevel=toplevel,
+                repo=repo, branch=branch, path=path, toplevel=toplevel,
+                autoRedirect=autoRedirect, redirectUrl=redirectUrl,
                 version=__version__
             ))
         self.flush()
