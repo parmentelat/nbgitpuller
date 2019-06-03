@@ -8,6 +8,8 @@ import argparse
 import datetime
 from functools import partial
 
+from pathlib import Path
+
 def execute_cmd(cmd, **kwargs):
     """
     Call given command, yielding output line by line
@@ -55,9 +57,9 @@ class GitPuller:
         Pull selected repo from a remote git repository,
         while preserving user changes
         """
-        if not os.path.exists(self.repo_dir):
+        if not Path(self.repo_dir).exists():
             yield from self.initialize_repo()
-        elif not os.path.exists(os.path.join(self.repo_dir, ".git")):
+        elif not (Path(self.repo_dir) / '.git').exists():
             yield from self.initialize_repo_from_existing_dir()
             yield from self.update()
         else:
@@ -144,7 +146,8 @@ class GitPuller:
         files = []
         for line in output.split('\n'):
             if line.startswith(kind):
-                files.append(os.path.join(self.repo_dir, line.split('\t', 1)[1]))
+                kind, file = line.split('\t', 1)
+                files.append(str(Path(self.repo_dir) / file))
 
         return files
 
@@ -157,14 +160,14 @@ class GitPuller:
         can do right now.
         """
         try:
-            lockpath = os.path.join(self.repo_dir, '.git', 'index.lock')
-            mtime = os.path.getmtime(lockpath)
+            lockpath = Path(self.repo_dir) / '.git' / 'index.lock'
+            mtime = lockpath.stat().st_mtime
             # A lock file does exist
             # If it's older than 10 minutes, we just assume it is stale and take over
             # If not, we fail with an explicit error.
             if time.time() - mtime > 600:
                 yield "Stale .git/index.lock found, attempting to remove"
-                os.remove(lockpath)
+                lockpath.remove()
                 yield "Stale .git/index.lock removed"
             else:
                 raise Exception('Recent .git/index.lock found, operation can not proceed. Try again in a few minutes.')
@@ -179,14 +182,16 @@ class GitPuller:
         # Find what files have been added!
         new_upstream_files = self.find_upstream_changed('A')
         for f in new_upstream_files:
-            if os.path.exists(f):
+            path = Path(f)
+            if path.exists():
                 # If there's a file extension, put the timestamp before that
                 ts = datetime.datetime.now().strftime('__%Y%m%d%H%M%S')
-                path_head, path_tail = os.path.split(f)
-                path_tail = ts.join(os.path.splitext(path_tail))
-                new_file_name = os.path.join(path_head, path_tail)
-                os.rename(f, new_file_name)
-                yield 'Renamed {} to {} to avoid conflict with upstream'.format(f, new_file_name)
+                path_head, stem, suffix = path.parent, path.stem, path.suffix
+                path_tail = "{stem}{ts}{suffix}".format(stem=stem, ts=ts, suffix=suffix)
+                new_file_name = path_head / path_tail
+                path.rename(new_file_name)
+                yield ('Renamed {} to {} to avoid conflict with upstream'
+                       .format(f, new_file_name))
 
 
     def update(self):
